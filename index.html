@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal de Inclusão Digital - Treinamento Completo</title>
+    <style>
+        :root { --font-size: 20px; --primary: #1877f2; --success: #28a745; --voice: #673ab7; --danger: #dc3545; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; font-size: var(--font-size); }
+        .container { max-width: 900px; margin: auto; background: #fff; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h1, h2 { color: var(--primary); text-align: center; }
+        .controls { text-align: center; margin-bottom: 20px; background: #e7f3ff; padding: 15px; border-radius: 10px; }
+        .btn-acc { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; margin: 5px; font-weight: bold; font-size: 0.9em; }
+        .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; margin-top: 30px; }
+        .card { background: #fff; border: 3px solid #e4e6eb; border-radius: 15px; padding: 20px; text-align: center; cursor: pointer; transition: 0.3s; }
+        .card:hover { border-color: var(--primary); transform: translateY(-5px); }
+        .quiz-card { border: 2px solid #e4e6eb; border-radius: 12px; padding: 25px; margin-top: 20px; min-height: 300px; }
+        .option-btn { display: block; width: 100%; text-align: left; padding: 15px; margin: 10px 0; border: 2px solid #ddd; border-radius: 8px; background: white; cursor: pointer; font-size: 1em; }
+        .correct { background: #d4edda !important; border-color: var(--success) !important; color: #155724; font-weight: bold; }
+        .incorrect { background: #f8d7da !important; border-color: var(--danger) !important; color: #721c24; }
+        #explanation { margin-top: 20px; padding: 20px; border-radius: 8px; display: none; border-left: 8px solid var(--primary); background: #f8f9fa; }
+        #next-btn { width: 100%; padding: 18px; background: var(--success); color: white; border: none; border-radius: 8px; font-size: 1.1em; cursor: pointer; margin-top: 20px; font-weight: bold; display: none; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="main-menu">
+        <h1>Portal de Treinamento Digital</h1>
+        <div class="controls">
+            <button class="btn-acc" onclick="adjustFont(2)">Letra Maior (+)</button>
+            <button class="btn-acc" onclick="adjustFont(-2)">Letra Menor (-)</button>
+        </div>
+        <div class="dashboard">
+            <div class="card" onclick="startModule('seguranca')">
+                <span style="font-size: 50px;">🛡️</span>
+                <h3>Segurança de Dados</h3>
+                <p>Senhas, proteção de contas e golpes por telefone.</p>
+            </div>
+            <div class="card" onclick="startModule('whatsapp')">
+                <span style="font-size: 50px;">💬</span>
+                <h3>WhatsApp Seguro</h3>
+                <p>Links falsos, clonagem e mensagens suspeitas.</p>
+            </div>
+            <div class="card" onclick="startModule('internet')">
+                <span style="font-size: 50px;">🌐</span>
+                <h3>Navegação e Compras</h3>
+                <p>Sites falsos, cadeado de segurança e fake news.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="quiz-area" class="hidden">
+        <button class="btn-acc" style="background:#6c757d" onclick="location.reload()">⬅ Voltar ao Menu</button>
+        <h2 id="module-title">Módulo</h2>
+        <div class="controls" style="background: #f3e5f5;">
+            <button class="btn-acc" style="background:var(--voice)" onclick="speakText()">🔊 Ouvir Pergunta</button>
+        </div>
+        <div style="text-align: center; font-weight: bold;">Pergunta <span id="current-q">1</span> de 5</div>
+        <div class="quiz-card">
+            <div id="question-text" class="question" style="font-weight: bold; margin-bottom: 20px;"></div>
+            <div id="options-container"></div>
+            <div id="explanation"></div>
+            <button id="next-btn" onclick="nextQuestion()">Próxima Pergunta ➔</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const allModules = {
+        seguranca: [
+            { q: "O banco liga pedindo sua senha para cancelar uma compra suspeita. Você deve passar?", options: ["Não, bancos nunca pedem senha", "Sim, para evitar o prejuízo"], correct: 0, exp: "Bancos reais nunca ligam pedindo senhas, códigos de SMS ou tokens." },
+            { q: "Qual o melhor lugar para guardar suas senhas?", options: ["Em um papel colado no celular", "Em um caderninho guardado em casa"], correct: 1, exp: "Deixar senhas junto ao celular facilita o acesso de criminosos em caso de furto." },
+            { q: "O que é uma senha forte?", options: ["Sua data de nascimento", "Uma mistura de letras, números e símbolos"], correct: 1, exp: "Datas de nascimento são fáceis de descobrir. Use combinações complexas." },
+            { q: "Você recebeu um código por SMS que não pediu e alguém liga pedindo esse número. Você entrega?", options: ["Não, esse código é secreto", "Sim, parece ser do suporte"], correct: 0, exp: "Esse código geralmente é para clonar seu WhatsApp ou acessar seu banco. Nunca o repasse." },
+            { q: "Seu computador diz que está com vírus e pede para ligar num 0800. O que fazer?", options: ["Ligar imediatamente", "Ignorar e fechar a página"], exp: "Isso é um golpe comum de 'Falso Suporte'. Bancos e Microsoft não pedem ligações assim." }
+        ],
+        whatsapp: [
+            { q: "Um amigo pede dinheiro emprestado pelo WhatsApp. Qual sua primeira reação?", options: ["Fazer o Pix para ajudar", "Ligar para ele ou pedir um áudio"], correct: 1, exp: "Golpistas clonam perfis. Sempre confirme a identidade por voz ou vídeo antes de pagar." },
+            { q: "Recebeu uma mensagem de 'Brinde de Natal' de uma grande loja. Você clica?", options: ["Sim, é uma loja famosa", "Não, pode ser um link falso"], correct: 1, exp: "Golpistas usam nomes de lojas famosas para roubar dados através de links maliciosos." },
+            { q: "Para que serve a 'Confirmação em Duas Etapas' no WhatsApp?", options: ["Para deixar o aplicativo mais rápido", "Para criar uma senha extra contra clonagem"], correct: 1, exp: "A verificação em duas etapas é a melhor proteção contra roubo de conta." },
+            { q: "Alguém mandou um arquivo chamado 'foto_da_festa.exe'. Você abre?", options: ["Sim, quero ver a foto", "Não, arquivos .exe podem ser vírus"], correct: 1, exp: "Arquivos estranhos podem infectar seu celular e roubar todas as suas fotos e contatos." },
+            { q: "Um desconhecido te adicionou em um grupo de investimentos. O que fazer?", options: ["Sair do grupo e bloquear", "Aproveitar as dicas de lucro"], correct: 0, exp: "Grupos de investimentos desconhecidos são quase sempre golpes de pirâmide financeira." }
+        ],
+        internet: [
+            { q: "Como saber se um site de compras é seguro?", options: ["Pelas cores bonitas", "Pelo cadeado ao lado do endereço (URL)"], correct: 1, exp: "O cadeado indica que a conexão é criptografada, mas sempre confira se o nome do site está correto." },
+            { q: "Você viu uma notícia dizendo que o governo vai dar dinheiro para idosos. Como confirmar?", options: ["Acreditar e clicar no link", "Verificar em sites de jornais conhecidos"], correct: 1, exp: "Fake news circulam rápido. Procure a notícia em portais oficiais como G1, R7 ou CNN." },
+            { q: "Ao fazer uma compra online, qual a forma mais segura de pagamento?", options: ["Boleto bancário", "Cartão Virtual gerado no app do banco"], correct: 1, exp: "O cartão virtual muda após o uso, protegendo os dados do seu cartão real." },
+            { q: "O Google avisa que seu celular está infectado e precisa baixar um 'limpador'. O que fazer?", options: ["Baixar agora", "Fechar a página, é propaganda falsa"], correct: 1, exp: "Sites não conseguem escanear seu celular. Isso é um anúncio para te induzir a baixar vírus." },
+            { q: "Ao pesquisar o site do banco no Google, qual o cuidado principal?", options: ["Clicar no primeiro link escrito 'Anúncio'", "Conferir se o endereço é exatamente o do banco"], correct: 1, exp: "Criminosos pagam anúncios para aparecer no topo com sites idênticos aos dos bancos." }
+        ]
+    };
+
+    let currentModule = [];
+    let currentIdx = 0;
+    let score = 0;
+    let fontSize = 20;
+
+    function adjustFont(delta) {
+        fontSize += delta;
+        document.documentElement.style.setProperty('--font-size', fontSize + 'px');
+    }
+
+    function speakText() {
+        window.speechSynthesis.cancel();
+        const msg = new SpeechSynthesisUtterance(document.getElementById("question-text").innerText);
+        msg.lang = 'pt-BR';
+        window.speechSynthesis.speak(msg);
+    }
+
+    function startModule(key) {
+        currentModule = [...allModules[key]].sort(() => Math.random() - 0.5);
+        currentIdx = 0; score = 0;
+        document.getElementById("main-menu").classList.add("hidden");
+        document.getElementById("quiz-area").classList.remove("hidden");
+        document.getElementById("module-title").innerText = "Treinamento: " + key.toUpperCase();
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        const q = currentModule[currentIdx];
+        document.getElementById("current-q").innerText = currentIdx + 1;
+        document.getElementById("question-text").innerText = q.q;
+        document.getElementById("explanation").style.display = "none";
+        document.getElementById("next-btn").style.display = "none";
+        
+        const container = document.getElementById("options-container");
+        container.innerHTML = "";
+        q.options.forEach((opt, i) => {
+            const btn = document.createElement("button");
+            btn.className = "option-btn";
+            btn.innerText = opt;
+            btn.onclick = () => checkAnswer(i);
+            container.appendChild(btn);
+        });
+    }
+
+    function checkAnswer(idx) {
+        const q = currentModule[currentIdx];
+        const buttons = document.querySelectorAll(".option-btn");
+        buttons.forEach((b, i) => {
+            b.disabled = true;
+            if(i === q.correct) b.classList.add("correct");
+            else if(i === idx) b.classList.add("incorrect");
+        });
+        if(idx === q.correct) score++;
+        const exp = document.getElementById("explanation");
+        exp.innerHTML = "<strong>Dica de Segurança:</strong> " + q.exp;
+        exp.style.display = "block";
+        document.getElementById("next-btn").style.display = "block";
+    }
+
+    function nextQuestion() {
+        currentIdx++;
+        if(currentIdx < currentModule.length) loadQuestion();
+        else showResult();
+    }
+
+    function showResult() {
+        const area = document.getElementById("quiz-area");
+        const percent = (score / 5) * 100;
+        if(percent >= 70) {
+            area.innerHTML = `<h2>🎉 Parabéns! Nota: ${percent}%</h2><p>Você acertou ${score} de 5 e concluiu este módulo!</p><button class="btn-acc" onclick="location.reload()">Voltar ao Menu</button>`;
+        } else {
+            area.innerHTML = `<h2>🛡️ Quase lá! Nota: ${percent}%</h2><p>Você acertou ${score}. O ideal para sua segurança é acertar pelo menos 4.</p><button class="btn-acc" style="background:#f39c12" onclick="location.reload()">Tentar Novamente</button>`;
+        }
+    }
+</script>
+</body>
+</html>
