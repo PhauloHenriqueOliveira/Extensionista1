@@ -11,7 +11,12 @@
         h1, h2 { color: var(--primary); text-align: center; }
         .controls { text-align: center; margin-bottom: 20px; background: #e7f3ff; padding: 15px; border-radius: 10px; }
         .btn-acc { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; margin: 5px; font-weight: bold; font-size: 0.9em; }
-        .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; margin-top: 30px; }
+        
+        .user-name-box { text-align: center; margin: 20px 0; background: #f8f9fa; padding: 15px; border-radius: 10px; border: 1px solid #ddd; }
+        .user-name-box label { font-weight: bold; display: block; margin-bottom: 8px; color: #333; }
+        .user-name-box input { padding: 10px; font-size: 0.9em; border: 2px solid #ccc; border-radius: 8px; width: 80%; max-width: 350px; text-align: center; }
+        
+        .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; margin-top: 20px; }
         .card { background: #fff; border: 3px solid #e4e6eb; border-radius: 15px; padding: 20px; text-align: center; cursor: pointer; transition: 0.3s; }
         .card:hover { border-color: var(--primary); transform: translateY(-5px); }
         .quiz-card { border: 2px solid #e4e6eb; border-radius: 12px; padding: 25px; margin-top: 20px; min-height: 300px; }
@@ -20,30 +25,46 @@
         .incorrect { background: #f8d7da !important; border-color: var(--danger) !important; color: #721c24; }
         #explanation { margin-top: 20px; padding: 20px; border-radius: 8px; display: none; border-left: 8px solid var(--primary); background: #f8f9fa; }
         #next-btn { width: 100%; padding: 18px; background: var(--success); color: white; border: none; border-radius: 8px; font-size: 1.1em; cursor: pointer; margin-top: 20px; font-weight: bold; display: none; }
+        
+        /* Estilos da Tabela de Histórico */
+        .report-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9em; }
+        .report-table th, .report-table td { border: 1px solid #ddd; padding: 12px; text-align: center; }
+        .report-table th { background-color: var(--primary); color: white; }
+        .report-table tr:nth-child(even) { background-color: #f9f9f9; }
+
         .hidden { display: none; }
     </style>
 </head>
 <body>
 
 <div class="container">
+    <!-- Menu Principal -->
     <div id="main-menu">
         <h1>Portal de Treinamento Digital</h1>
+        
         <div class="controls">
             <button class="btn-acc" onclick="adjustFont(2)">Letra Maior (+)</button>
             <button class="btn-acc" onclick="adjustFont(-2)">Letra Menor (-)</button>
+            <button class="btn-acc" style="background:#17a2b8" onclick="showReport()">📊 Ver Histórico de Notas</button>
         </div>
+
+        <div class="user-name-box">
+            <label for="username-input">Digite o seu nome para começar:</label>
+            <input type="text" id="username-input" placeholder="Seu nome completo">
+        </div>
+
         <div class="dashboard">
-            <div class="card" onclick="startModule('seguranca')">
+            <div class="card" onclick="startModule('seguranca', 'Segurança de Dados')">
                 <span style="font-size: 50px;">🛡️</span>
                 <h3>Segurança de Dados</h3>
                 <p>Senhas, proteção de contas e golpes por telefone.</p>
             </div>
-            <div class="card" onclick="startModule('whatsapp')">
+            <div class="card" onclick="startModule('whatsapp', 'WhatsApp Seguro')">
                 <span style="font-size: 50px;">💬</span>
                 <h3>WhatsApp Seguro</h3>
                 <p>Links falsos, clonagem e mensagens suspeitas.</p>
             </div>
-            <div class="card" onclick="startModule('internet')">
+            <div class="card" onclick="startModule('internet', 'Navegação e Compras')">
                 <span style="font-size: 50px;">🌐</span>
                 <h3>Navegação e Compras</h3>
                 <p>Sites falsos, cadeado de segurança e fake news.</p>
@@ -51,8 +72,9 @@
         </div>
     </div>
 
+    <!-- Área do Quiz -->
     <div id="quiz-area" class="hidden">
-        <button class="btn-acc" style="background:#6c757d" onclick="location.reload()">⬅ Voltar ao Menu</button>
+        <button class="btn-acc" style="background:#6c757d" onclick="goHome()">⬅ Voltar ao Menu</button>
         <h2 id="module-title">Módulo</h2>
         <div class="controls" style="background: #f3e5f5;">
             <button class="btn-acc" style="background:var(--voice)" onclick="speakText()">🔊 Ouvir Pergunta</button>
@@ -65,6 +87,14 @@
             <button id="next-btn" onclick="nextQuestion()">Próxima Pergunta ➔</button>
         </div>
     </div>
+
+    <!-- Segunda Página / Relatório de Notas -->
+    <div id="report-area" class="hidden">
+        <button class="btn-acc" style="background:#6c757d" onclick="goHome()">⬅ Voltar ao Menu</button>
+        <h2>📊 Histórico de Resultados</h2>
+        <div id="table-container"></div>
+        <button class="btn-acc" style="background:var(--danger); margin-top:20px;" onclick="clearHistory()">🗑️ Limpar Histórico</button>
+    </div>
 </div>
 
 <script>
@@ -74,7 +104,7 @@
             { q: "Qual o melhor lugar para guardar suas senhas?", options: ["Em um papel colado no celular", "Em um caderninho guardado em casa"], correct: 1, exp: "Deixar senhas junto ao celular facilita o acesso de criminosos em caso de furto." },
             { q: "O que é uma senha forte?", options: ["Sua data de nascimento", "Uma mistura de letras, números e símbolos"], correct: 1, exp: "Datas de nascimento são fáceis de descobrir. Use combinações complexas." },
             { q: "Você recebeu um código por SMS que não pediu e alguém liga pedindo esse número. Você entrega?", options: ["Não, esse código é secreto", "Sim, parece ser do suporte"], correct: 0, exp: "Esse código geralmente é para clonar seu WhatsApp ou acessar seu banco. Nunca o repasse." },
-            { q: "Seu computador diz que está com vírus e pede para ligar num 0800. O que fazer?", options: ["Ligar imediatamente", "Ignorar e fechar a página"], exp: "Isso é um golpe comum de 'Falso Suporte'. Bancos e Microsoft não pedem ligações assim." }
+            { q: "Seu computador diz que está com vírus e pede para ligar num 0800. O que fazer?", options: ["Ligar imediatamente", "Ignorar e fechar a página"], correct: 1, exp: "Isso é um golpe comum de 'Falso Suporte'. Bancos e Microsoft não pedem ligações assim." }
         ],
         whatsapp: [
             { q: "Um amigo pede dinheiro emprestado pelo WhatsApp. Qual sua primeira reação?", options: ["Fazer o Pix para ajudar", "Ligar para ele ou pedir um áudio"], correct: 1, exp: "Golpistas clonam perfis. Sempre confirme a identidade por voz ou vídeo antes de pagar." },
@@ -93,9 +123,11 @@
     };
 
     let currentModule = [];
+    let currentModuleName = "";
     let currentIdx = 0;
     let score = 0;
     let fontSize = 20;
+    let userName = "";
 
     function adjustFont(delta) {
         fontSize += delta;
@@ -109,12 +141,29 @@
         window.speechSynthesis.speak(msg);
     }
 
-    function startModule(key) {
+    function goHome() {
+        document.getElementById("main-menu").classList.remove("hidden");
+        document.getElementById("quiz-area").classList.add("hidden");
+        document.getElementById("report-area").classList.add("hidden");
+    }
+
+    function startModule(key, name) {
+        const input = document.getElementById("username-input").value.trim();
+        if (input === "") {
+            alert("Por favor, digite o seu nome antes de iniciar o treinamento.");
+            document.getElementById("username-input").focus();
+            return;
+        }
+
+        userName = input;
+        currentModuleName = name;
         currentModule = [...allModules[key]].sort(() => Math.random() - 0.5);
-        currentIdx = 0; score = 0;
+        currentIdx = 0; 
+        score = 0;
+        
         document.getElementById("main-menu").classList.add("hidden");
         document.getElementById("quiz-area").classList.remove("hidden");
-        document.getElementById("module-title").innerText = "Treinamento: " + key.toUpperCase();
+        document.getElementById("module-title").innerText = "Treinamento: " + name;
         loadQuestion();
     }
 
@@ -157,13 +206,83 @@
         else showResult();
     }
 
+    function saveResult(name, moduleName, score, total) {
+        const history = JSON.parse(localStorage.getItem("quiz_history") || "[]");
+        const newRecord = {
+            name: name,
+            module: moduleName,
+            score: `${score}/${total}`,
+            percent: `${((score / total) * 100).toFixed(0)}%`,
+            date: new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})
+        };
+        history.push(newRecord);
+        localStorage.setItem("quiz_history", JSON.stringify(history));
+    }
+
     function showResult() {
+        saveResult(userName, currentModuleName, score, 5);
+        
         const area = document.getElementById("quiz-area");
         const percent = (score / 5) * 100;
-        if(percent >= 70) {
-            area.innerHTML = `<h2>🎉 Parabéns! Nota: ${percent}%</h2><p>Você acertou ${score} de 5 e concluiu este módulo!</p><button class="btn-acc" onclick="location.reload()">Voltar ao Menu</button>`;
-        } else {
-            area.innerHTML = `<h2>🛡️ Quase lá! Nota: ${percent}%</h2><p>Você acertou ${score}. O ideal para sua segurança é acertar pelo menos 4.</p><button class="btn-acc" style="background:#f39c12" onclick="location.reload()">Tentar Novamente</button>`;
+        
+        let htmlContent = `
+            <h2>${percent >= 70 ? '🎉 Parabéns' : '🛡️ Quase lá'}, ${userName}!</h2>
+            <h3>Sua Nota: ${percent}%</h3>
+            <p>Você acertou <strong>${score} de 5</strong> questões neste módulo.</p>
+            <button class="btn-acc" onclick="goHome()">Voltar ao Menu Principal</button>
+            <button class="btn-acc" style="background:#17a2b8" onclick="showReport()">📊 Ver Todo o Histórico</button>
+        `;
+
+        area.innerHTML = htmlContent;
+    }
+
+    function showReport() {
+        document.getElementById("main-menu").classList.add("hidden");
+        document.getElementById("quiz-area").classList.add("hidden");
+        document.getElementById("report-area").classList.remove("hidden");
+
+        const history = JSON.parse(localStorage.getItem("quiz_history") || "[]");
+        const container = document.getElementById("table-container");
+
+        if(history.length === 0) {
+            container.innerHTML = "<p style='text-align:center;'>Nenhum registro encontrado ainda.</p>";
+            return;
+        }
+
+        let tableHtml = `
+            <table class="report-table">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Módulo</th>
+                        <th>Acertos</th>
+                        <th>Porcentagem</th>
+                        <th>Data/Hora</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        history.forEach(r => {
+            tableHtml += `
+                <tr>
+                    <td><strong>${r.name}</strong></td>
+                    <td>${r.module}</td>
+                    <td>${r.score}</td>
+                    <td>${r.percent}</td>
+                    <td>${r.date}</td>
+                </tr>
+            `;
+        });
+
+        tableHtml += "</tbody></table>";
+        container.innerHTML = tableHtml;
+    }
+
+    function clearHistory() {
+        if(confirm("Tem certeza que deseja apagar todo o histórico de notas?")) {
+            localStorage.removeItem("quiz_history");
+            showReport();
         }
     }
 </script>
